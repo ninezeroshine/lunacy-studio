@@ -199,6 +199,27 @@ def os_badge(name, bg):
     return t.done()
 
 
+def os_selector():
+    """Экран выбора ОС (Fn-сочетание Win/Mac), 240×135. Прошивка S98 берёт его адрес из [0x200001c8]: английский
+    вариант 0x260870 (корейский 0x1004dc). Курсор 20×2 (0x21bd00) она рисует сама под пунктом: x = 65 (Win)
+    и x = 158 (Mac), y = 108, и перерисовывает строки 30…134 из этой же картинки, поэтому под пунктами — чистый фон."""
+    t = Tile(240, 135, INK1)
+    for y in range(135):
+        k = min(abs(y - 70) / 70, 1) ** 1.6
+        c = tuple(round(a + (b - a) * k) for a, b in zip(rgb(INK1), rgb(INK0)))
+        t.d.rectangle(t.S([0, y, 240, y + 1]), fill=c)
+    t.text((12, 13), "Система", 12, SILVER_BRIGHT, anchor="lm", path=INTER)
+    t.line([(12, 24.5), (228, 24.5)], LINE, 1)
+    t.dot(12, 24.5, 1.2, GOLD)
+    for cx, name, sub in [(75, "WIN", "Windows"), (168, "MAC", "macOS")]:
+        t.rect([cx - 33, 35.5, cx + 33, 95.5], outline=LINE_STRONG, fill=INK2, r=9)
+        t.text((cx, 58), name, 20, SILVER_BRIGHT, wght=700)
+        t.text((cx, 81), sub, 10.5, SILVER_DIM, path=INTER)
+        t.dot(cx, 42.5, 1, GOLD)
+    t.line([(40, 108.5), (200, 108.5)], LINE, 1)            # дорожка курсора: сам курсор рисует прошивка
+    return t.done()
+
+
 def lock(on, bg):
     t = Tile(29, 28, bg)
     t.rect([1.5, 1.5, 27.5, 26.5], outline=GOLD if on else LINE_STRONG, fill=INK3 if on else None, r=6)
@@ -289,6 +310,8 @@ def main():
     # нижний ряд: K (8) — ОС, L (138) — блокировка Win, M (171) — Caps, N (204) — Num
     for a, name in [(0x2199c, "WIN"), (0x21344, "MAC"), (0x20cec, "iOS"), (0x20694, "AND")]:
         tiles[a] = os_badge(name, crop(8, 100, 29, 28))
+    # экран выбора ОС (камера 2026-10-18: адрес по сдвигу служебных подписей, см. recon/spi/find_screen_ptr.py)
+    tiles[0x260870] = os_selector()
     tiles[0x21ff4] = lock(False, crop(138, 100, 29, 28))
     tiles[0x2264c] = lock(True, crop(138, 100, 29, 28))
     tiles[0x1e848] = badge("A", False, crop(171, 100, 29, 28), 13)

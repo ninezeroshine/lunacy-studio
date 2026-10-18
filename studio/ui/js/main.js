@@ -139,7 +139,7 @@ async function commitDraft(b, commit) {
 on("draft", () => { renderDraftBar(); current?.onDraft?.(); });
 
 // ---------- статус ----------
-let lastConnected = null, lastJob = null, instance = null, restartedFlag = false, bannerText = "";
+let lastConnected = null, lastJob = null, instance = null, restartedFlag = false, bannerText = "", unsyncedSeen = 0;
 async function poll() {
   try {
     const st = await get("/api/status");
@@ -204,10 +204,14 @@ function renderStatus(st) {
     const e = store.server.store_error, clean = /чистого листа/.test(e);
     lines.push(`${icon("warn")}<span>${esc(e.charAt(0).toUpperCase() + e.slice(1))}. Старый файл сохранён рядом как profile.json.broken.${clean && hasProfiles ? " Вернуть настройку можно в «Настройки» → «Профили» → «Применить»." : ""}</span><button class="btn small quiet" data-banner="store">Понятно</button>`);
   }
+  // Метку «оборвалось» сервис ставит в начале каждой записи и снимает в конце, поэтому опрос часто ловит её посреди
+  // нормальной записи. Обрыв — только если метка держится два опроса подряд, когда клавиатура свободна и задач нет.
+  const idle = !st.busy && st.job?.status !== "running";
+  unsyncedSeen = st.unsynced && idle ? unsyncedSeen + 1 : 0;
+  const broken = unsyncedSeen >= 2;
   if (st.unsynced === "графика экрана") {
-    // метка стоит и во время самой записи (5 минут): обрыв — только когда клавиатура уже не занята
-    if (!st.busy) lines.push(`${icon("warn")}<span>Запись графики экрана оборвалась посередине — значки и фон экрана клавиатуры могут быть испорчены. Подключи кабель и залей набор ещё раз в разделе «Экран».</span>`);
-  } else if (st.unsynced) {
+    if (broken) lines.push(`${icon("warn")}<span>Запись графики экрана оборвалась посередине — значки и фон экрана клавиатуры могут быть испорчены. Подключи кабель и залей набор ещё раз в разделе «Экран».</span>`);
+  } else if (st.unsynced && broken) {
     lines.push(`${icon("warn")}<span>Запись в клавиатуру (${esc(st.unsynced)}) оборвалась посередине — клавиатура может работать не так, как показано здесь. Подключи кабель и запиши ещё раз или примени профиль в «Настройках».</span>`);
   }
   if (st.vendor_app) {

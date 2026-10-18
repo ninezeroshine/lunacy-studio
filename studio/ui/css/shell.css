@@ -84,7 +84,7 @@ html[data-boot] #view { opacity: 0; }
 .offline.on { display: grid; gap: 8px; }
 .offline .bline { display: flex; align-items: center; gap: 12px; }
 .offline .bline > span { flex: 1; }
-.offline .bline svg { flex: none; }
+.offline .bline svg { flex: none; width: 18px; height: 18px; }   /* без размера SVG растягивался на весь экран */
 
 /* View Transitions: карта клавиатуры остаётся на месте при смене раздела */
 ::view-transition-old(root), ::view-transition-new(root) { animation-duration: var(--t-mid); animation-timing-function: var(--ease); }

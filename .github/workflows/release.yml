@@ -58,5 +58,6 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           $tag = "${{ github.ref_name }}"
-          $pre = if ($tag.Contains("-")) { "--prerelease" } else { "" }
-          gh release create $tag (Get-ChildItem dist -File).FullName --title "Lunacy Studio $($tag.TrimStart('v'))" --notes-file notes.md $pre
+          $args = @($tag) + (Get-ChildItem dist -File).FullName + @("--title", "Lunacy Studio $($tag.TrimStart('v'))", "--notes-file", "notes.md")
+          if ($tag.Contains("-")) { $args += "--prerelease" }   # пустую строку не передаём: gh принял бы её за имя файла
+          gh release create @args

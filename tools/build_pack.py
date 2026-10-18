@@ -8,7 +8,7 @@
 python -I tools/build_pack.py  →  studio/assets/graphics/pack.bin.gz, live_head.bin.gz (первые 16 блоков набора
 с фоном живого экрана: подписи полей часов) и preview/*.png. Нужны Pillow и numpy (только для сборки, не для Studio).
 """
-import gzip, json, pathlib
+import colorsys, gzip, json, math, pathlib, sys
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
@@ -220,6 +220,231 @@ def os_selector():
     return t.done()
 
 
+# ---------- экраны меню (Fn+Ctrl+→ — меню, Fn+Enter — выбор, Fn+←/→ — навигация, Fn+Shift_R — домой) ----------
+# Адреса — карта F108 Pro (aula-spi_blocks.h), разметка — заводские картинки F108 по этим адресам. Курсоры поверх
+# рисует прошивка (выводы S98, analysis/s98_blits.json): 59×2 (0x1cca74) под пунктами меню на y=112, x=38/144;
+# 15×2 (0xe0a60) под эффектами на y=67/110, x=58/169; 15×2 (0x15f3ec) под связью на y=71/122, x=45/113/182;
+# 20×2 (0x21bd00) под языком на y=108, x=65/158. Пункты стоят ровно над этими местами.
+EFFECT_SHORT = ["Выключить", "Статичный", "Нажатие", "Затухание", "Звёзды", "Дождь", "Разноцветный", "Дыхание",
+                "Цикл", "Рябь", "Верт. радуга", "Гориз. радуга", "Вихрь радуги", "Взрывы", "Разряды", "Рябь 2",
+                "Поток", "Волна", "Косая волна", "Курсирующий"]   # studio/server.py EFFECTS, сокращённо
+
+
+def menu_bg(title=None):
+    t = Tile(240, 135, INK1)
+    for y in range(135):
+        k = min(abs(y - 70) / 70, 1) ** 1.6
+        c = tuple(round(a + (b - a) * k) for a, b in zip(rgb(INK1), rgb(INK0)))
+        t.d.rectangle(t.S([0, y, 240, y + 1]), fill=c)
+    if title:
+        t.text((12, 13), title, 12, SILVER_BRIGHT, anchor="lm", path=INTER)
+        t.line([(12, 24.5), (228, 24.5)], LINE, 1)
+        t.dot(12, 24.5, 1.2, GOLD)
+    return t
+
+
+def page_dots(t, n, i, y=127):
+    for k in range(n):
+        t.dot(120 + (k - (n - 1) / 2) * 9, y, 1.6 if k == i else 1.2, GOLD if k == i else LINE_STRONG)
+
+
+def g_sun(t, cx, cy, r, c, width=1.2):
+    t.arc([cx - r, cy - r, cx + r, cy + r], 0, 360, c, width)
+    for k in range(8):
+        a = k * math.pi / 4
+        t.line([(cx + math.cos(a) * (r + 2.2), cy + math.sin(a) * (r + 2.2)),
+                (cx + math.cos(a) * (r + 4.6), cy + math.sin(a) * (r + 4.6))], c, width)
+
+
+def g_chevrons(t, cx, cy, n, c, width=1.4):
+    x0 = cx - (n - 1) * 3
+    for k in range(n):
+        x = x0 + k * 6
+        t.line([(x - 2.5, cy - 5), (x + 2.5, cy), (x - 2.5, cy + 5)], c, width)
+
+
+def g_speaker(t, cx, cy, c, waves=2):
+    t.d.polygon(t.S([cx - 9, cy - 3.5, cx - 5, cy - 3.5, cx - 1, cy - 7.5, cx - 1, cy + 7.5, cx - 5, cy + 3.5,
+                     cx - 9, cy + 3.5]), outline=rgb(c), width=max(1, round(1.25 * SS)))
+    for k in range(waves):
+        r = 4.5 + k * 4
+        t.arc([cx - 1 - r, cy - r, cx - 1 + r, cy + r], -45, 45, c, 1.25)
+
+
+def g_icon(t, kind, cx, cy, c):
+    """Значки пунктов главного меню, ~24×24."""
+    if kind == "connect":
+        g_usb(t, cx - 6, cy, c)
+        t.text((cx + 6, cy + 0.5), "BT", 8.5, c, wght=600)
+    elif kind == "system":
+        t.rect([cx - 10, cy - 8, cx + 10, cy + 5], outline=c, r=2)
+        t.line([(cx, cy + 5), (cx, cy + 9)], c)
+        t.line([(cx - 5, cy + 9.5), (cx + 5, cy + 9.5)], c)
+    elif kind == "effect":
+        for dx, dy, r in [(-3, -1, 7), (7, -7, 3.5), (7, 7, 2.5)]:
+            x, y = cx + dx, cy + dy
+            t.d.polygon(t.S([x, y - r, x + r * .28, y - r * .28, x + r, y, x + r * .28, y + r * .28, x, y + r,
+                             x - r * .28, y + r * .28, x - r, y, x - r * .28, y - r * .28]), fill=rgb(c))
+    elif kind == "colour":
+        for dx, dy, col in [(-4, -3, "#e2877a"), (4, -3, "#8fd3b5"), (0, 4, "#8aa6e6")]:
+            t.arc([cx + dx - 6, cy + dy - 6, cx + dx + 6, cy + dy + 6], 0, 360, col, 1.4)
+    elif kind == "brightness":
+        t.dot(cx, cy, 4.5, c)
+        g_sun(t, cx, cy, 6, c)
+    elif kind == "speed":
+        t.arc([cx - 10, cy - 8, cx + 10, cy + 12], 180, 360, c, 1.4)
+        t.line([(cx, cy + 2), (cx + 6, cy - 5)], GOLD, 1.6)
+        t.dot(cx, cy + 2, 1.8, c)
+    elif kind == "volume":
+        g_speaker(t, cx + 2, cy, c)
+    elif kind == "language":
+        t.text((cx, cy + 0.5), "Аа", 14, c, path=INTER)
+
+
+CONFIG_PAGES = [[("connect", "Связь"), ("system", "Система")], [("effect", "Эффект"), ("colour", "Цвет")],
+                [("brightness", "Яркость"), ("speed", "Скорость")], [("volume", "Громкость"), ("language", "Язык")]]
+
+
+def config_menu(page):
+    """Главное меню, 4 страницы по 2 пункта (F108 «Config Menu (English)» 0x2AF82E); курсор 59×2 на y=112."""
+    t = menu_bg("Настройки")
+    for cx, (kind, label) in zip((67.5, 173.5), CONFIG_PAGES[page]):
+        t.rect([cx - 25, 36.5, cx + 25, 84.5], outline=LINE_STRONG, fill=INK2, r=12)
+        t.dot(cx, 41.5, .9, GOLD)
+        g_icon(t, kind, cx, 61, SILVER_BRIGHT)
+        t.text((cx, 100), label, 10.5, SILVER, path=INTER)
+    page_dots(t, 4, page)
+    return t.done()
+
+
+def effect_menu(page):
+    """Выбор эффекта, 5 страниц по 4 (F108 «Effect (English)»): режимы 1…19 и «Выключить» последним."""
+    t = menu_bg("Эффект")
+    for k in range(4):
+        n = page * 4 + k + 1
+        mode = 0 if n == 20 else n
+        cx, cy = (65.5, 176.5)[k % 2], (51.5, 94.5)[k // 2]
+        t.rect([cx - 47, cy - 12, cx + 47, cy + 12], outline=LINE_STRONG, fill=INK2, r=12)
+        if mode:
+            t.text((cx - 38, cy + 0.5), str(mode), 8.5, GOLD, anchor="lm", wght=600)
+        t.text((cx + (4 if mode else 0), cy + 0.5), EFFECT_SHORT[mode], 9.5 if len(EFFECT_SHORT[mode]) < 11 else 8.5, SILVER_BRIGHT if mode else SILVER_DIM,
+               path=INTER)
+    page_dots(t, 5, page)
+    return t.done()
+
+
+COLOURS = [("RGB", None), ("R", "#e0584c"), ("O", "#e8923f"), ("Y", "#e6cc4f"), ("G", "#55c06a"),
+           ("C", "#4cc4d4"), ("B", "#4b72e0"), ("P", "#a464e0"), ("W", "#e6ebf7")]
+
+
+def colour_menu():
+    """Цвет подсветки, 9 кружков 5+4 (F108 «Colors (English)» 0x28FDEE). Курсор прошивки здесь не выяснен."""
+    t = menu_bg("Цвет подсветки")
+    for k, (name, col) in enumerate(COLOURS):
+        cx, cy = (31, 76, 120, 165, 210)[k % 5], (54, 100)[k // 5]
+        t.arc([cx - 15, cy - 15, cx + 15, cy + 15], 0, 360, LINE_STRONG, 1)
+        if col:
+            t.dot(cx, cy, 11.5, col)
+        else:                                  # RGB: кольцо из 12 секторов радуги
+            for s in range(12):
+                r, g, b = colorsys.hsv_to_rgb(s / 12, .55, .9)
+                t.d.pieslice(t.S([cx - 11.5, cy - 11.5, cx + 11.5, cy + 11.5]), s * 30 - 90, s * 30 - 60,
+                             fill=(round(r * 255), round(g * 255), round(b * 255)))
+            t.dot(cx, cy, 5.5, INK2)
+    return t.done()
+
+
+def connect_menu():
+    """Тип связи, 3×2 (F108 «Conn Type (English)» 0x29FB0E); курсор 15×2 на y=71/122 под ячейками x=52/120/189."""
+    t = menu_bg("Связь")
+    for k, kind in enumerate(["usb", "24g", "bt1", "bt2", "bt3", "back"]):
+        cx, cy = (52.5, 120.5, 189.5)[k % 3], (51.5, 101.5)[k // 3]
+        t.rect([cx - 19, cy - 15.5, cx + 19, cy + 15.5], outline=LINE_STRONG, fill=INK2, r=8)
+        c = SILVER_BRIGHT
+        if kind == "usb":
+            g_usb(t, cx, cy, c)
+        elif kind == "24g":
+            t.text((cx, cy + 0.5), "2.4G", 10, c, wght=600)
+        elif kind == "back":
+            t.arc([cx - 7, cy - 6, cx + 7, cy + 8], 270, 90 + 360, c, 1.4)
+            t.line([(cx, cy - 6), (cx - 7, cy - 6)], c, 1.4)
+            t.d.polygon(t.S([cx - 9, cy - 6, cx - 5, cy - 9.5, cx - 5, cy - 2.5]), fill=rgb(c))
+        else:
+            t.text((cx, cy + 0.5), kind.upper(), 11, c, wght=600)
+    return t.done()
+
+
+def volume_menu():
+    """Громкость (F108 «Volume Page (English)» 0x2FE9CE). Значки ± прошивка S98 кладёт сверху в (20,62) и (170,57)
+    (наши 0x325c24 и 0x3245f0), шкалу 62…162 у F108 — вероятно, тоже она: здесь только пустая дорожка."""
+    t = menu_bg("Громкость")
+    t.rect([62, 66, 162, 80], outline=LINE_STRONG, fill=INK2, r=7)
+    return t.done()
+
+
+def language_menu():
+    """Язык меню (F108 «Language (English)» 0x30E6EE); курсор 20×2 на y=108, x=65/158. Наши картинки русские в
+    обоих наборах, поэтому смысл пункта — только какой набор адресов читает прошивка."""
+    t = menu_bg("Язык")
+    for cx, code, sub in [(75, "KO", "한국어"), (168, "EN", "English")]:
+        t.rect([cx - 19, 48.5, cx + 19, 82.5], outline=LINE_STRONG, fill=INK2, r=8)
+        t.text((cx, 66), code, 13, SILVER_BRIGHT, wght=600)
+        t.text((cx, 97), sub, 10, SILVER_DIM, path="C:/Windows/Fonts/malgun.ttf" if code == "KO" else INTER)
+    return t.done()
+
+
+def level_screen(kind, level, status_bg):
+    """Яркость / скорость подсветки, уровень 0…5 (F108 «Brightness» 0x22C9E, «Speed» 0x81B5E по 6 кадров).
+    Верх 99×28 совпадает с подписью T3/T4, которую прошивка S98 кладёт в (0,0): так экран одинаков с ней и без неё."""
+    t = Tile(240, 135, INK1)
+    for y in range(135):                       # тот же градиент и шкала, что у фона экрана статуса
+        k = min(abs(y - 83) / 60, 1) ** 1.6
+        c = tuple(round(a + (b - a) * k) for a, b in zip(rgb(INK1), rgb(INK0)))
+        t.d.rectangle(t.S([0, y, 240, y + 1]), fill=c)
+    for x in range(10, 240, 20):
+        t.line([(x, 0), (x, 2 if x % 40 else 3.5)], LINE_STRONG, 1)
+    if kind == "brightness":
+        g_sun(t, 22, 67, 3, SILVER_DIM)
+        t.dot(218, 67, 4.5, GOLD)
+        g_sun(t, 218, 67, 6, GOLD)
+    else:
+        g_chevrons(t, 22, 67, 1, SILVER_DIM)
+        g_chevrons(t, 218, 67, 3, GOLD)
+    t.rect([40.5, 59.5, 197.5, 74.5], outline=LINE_STRONG, fill=INK2, r=7.5)
+    for k in range(5):
+        x0 = 44 + k * 30.2
+        if k < level:
+            t.rect([x0, 63, x0 + 27, 71], fill=GOLD if k == level - 1 else GOLD_DIM, r=3)
+    t.text((119, 94), f"{level * 20}%" if level else "выкл", 13, SILVER_BRIGHT, wght=600)
+    img = t.done()
+    img.paste(caption("Яркость" if kind == "brightness" else "Скорость", status_bg.crop((0, 0, 99, 28))), (0, 0))
+    return img
+
+
+def menu_tiles():
+    """Все экраны меню: {адрес: картинка}. В набор попадают все, кроме MENUS_OFF."""
+    sb = status_background()
+    out = {}
+    for i in range(6):
+        out[0x22C9E + i * 0xFD20] = level_screen("brightness", i, sb)
+        out[0x81B5E + i * 0xFD20] = level_screen("speed", i, sb)
+    for i in range(5):
+        out[0x240C4E + i * 0xFD20] = effect_menu(i)
+    for i in range(4):
+        out[0x2AF82E + i * 0xFD20] = config_menu(i)
+    out[0x28FDEE] = colour_menu()
+    out[0x29FB0E] = connect_menu()
+    out[0x2FE9CE] = volume_menu()
+    out[0x30E6EE] = language_menu()
+    return out
+
+
+# Фото со служебными подписями подтвердило только выбор ОС 0x2EECAE (адрес F108). Остальные адреса — та же карта F108:
+# заводская графика F108 по ним ложится без сдвига. Экран, который на фото окажется сдвинутым, — сюда (вернётся
+# служебная заливка с адресами), адрес пересчитать recon/spi/menu_addr.py solve и поправить в menu_tiles.
+MENUS_OFF = set()
+
+
 def lock(on, bg):
     t = Tile(29, 28, bg)
     t.rect([1.5, 1.5, 27.5, 26.5], outline=GOLD if on else LINE_STRONG, fill=INK3 if on else None, r=6)
@@ -314,6 +539,10 @@ def main():
     # Подтверждено фото экрана при переключении: служебные подписи 2EE000…2FD000 с x≈65, первая у верхнего края —
     # ровно картинка с 0x2EECAE. (0x260870 из веток меню S98 оказался не тем: экраны меню у Lunacy — как у F108.)
     tiles[0x2EECAE] = os_selector()
+    # экраны меню F108 (кроме MENUS_OFF): пишутся первыми, значки S98 при пересечении поверх — у Brightness 0x22C9E
+    # первые 3 пикселя заняты концом L2 0x2264c, у Effect 0x240C4E первая строка — концом подписи T4 0x23f888
+    menus = {a: im for a, im in menu_tiles().items() if a not in MENUS_OFF}
+    tiles.update(menus)
     tiles[0x21ff4] = lock(False, crop(138, 100, 29, 28))
     tiles[0x2264c] = lock(True, crop(138, 100, 29, 28))
     tiles[0x1e848] = badge("A", False, crop(171, 100, 29, 28), 13)
@@ -338,7 +567,7 @@ def main():
         tiles[a] = Image.new("RGB", (w, h), rgb(GOLD))
 
     written = []
-    for a in sorted(tiles):
+    for a in sorted(tiles, key=lambda a: (a not in menus, a)):
         data = rgb565(tiles[a])
         if a in regions:
             p = regions[a]
@@ -367,5 +596,21 @@ def main():
     print(f"{len(written)} ресурсов, {len(buf) // 4096} блоков")
 
 
+def menus_preview(dst):
+    """Лист всех экранов меню (и неподтверждённых) с адресами: python -I tools/build_pack.py --menus out.png"""
+    tiles = menu_tiles()
+    W, H = 240 * 2 + 8, 135 * 2 + 20
+    sheet = Image.new("RGB", (W * 4, H * -(-len(tiles) // 4)), (40, 40, 40))
+    d = ImageDraw.Draw(sheet)
+    for k, a in enumerate(sorted(tiles)):
+        x, y = (k % 4) * W + 4, (k // 4) * H + 16
+        sheet.paste(tiles[a].resize((480, 270), Image.NEAREST), (x, y))
+        d.text((x, y - 13), f"{a:06X}" + ("  (выключен)" if a in MENUS_OFF else ""), fill=(220, 220, 220))
+    sheet.save(dst)
+
+
 if __name__ == "__main__":
-    main()
+    if len(sys.argv) > 2 and sys.argv[1] == "--menus":
+        menus_preview(sys.argv[2])
+    else:
+        main()

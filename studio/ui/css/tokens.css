@@ -1,0 +1,57 @@
+/* Обсерватория: токены. Значения и правила — design/SPEC.md, «Визуальная система». */
+@font-face { font-family: "Inter"; src: url("../fonts/Inter-Regular.otf") format("opentype"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Inter"; src: url("../fonts/Inter-SemiBold.otf") format("opentype"); font-weight: 600; font-display: swap; }
+
+:root {
+  color-scheme: dark;
+
+  /* ступени тона: поверхности отделяются тоном, а не рамками */
+  --ink-0: #04070d;   /* колодцы: поля ввода, рельс навигации */
+  --ink-1: #080d1a;   /* фон приложения */
+  --ink-2: #0f1628;   /* панели */
+  --ink-3: #182240;   /* поднятые элементы: кнопки, выбранное, строки списков */
+  --ink-4: #22305a;   /* наведение */
+
+  --line: rgba(196, 207, 232, .14);
+  --line-soft: rgba(196, 207, 232, .08);
+  --line-strong: rgba(196, 207, 232, .32);
+
+  --silver: #d3dbec;         /* основной текст — полным светом, а не серым */
+  --silver-bright: #f2f5fb;
+  --silver-dim: #9ea9c6;     /* пояснения */
+  --silver-faint: #78839f;   /* только второстепенные пометки */
+
+  --gold: #e0c48c;
+  --gold-bright: #f2dcab;
+  --gold-ink: #1c1608;       /* текст на золоте */
+  --gold-dim: rgba(224, 196, 140, .42);
+  --gold-wash: rgba(224, 196, 140, .13);
+
+  --ok: #8fd3b5;
+  --warn: #e6b56e;
+  --danger: #e2877a;
+  --danger-wash: rgba(226, 135, 122, .10);
+
+  --font-display: "Sitka Display", "Sitka Heading", "Sitka Subheading", Georgia, "Times New Roman", serif;
+  --font-heading: "Sitka Heading", "Sitka Subheading", Georgia, serif;
+  --font-ui: "Inter", "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  --font-note: "Bahnschrift SemiCondensed", "Bahnschrift", "Segoe UI", sans-serif;
+
+  --r-ctl: 8px;
+  --r-panel: 16px;
+  --r-key: 4px;
+
+  --ease: cubic-bezier(.2, .8, .2, 1);
+  --t-fast: 140ms;
+  --t-mid: 220ms;
+  --t-slow: 320ms;
+
+  --nav-w: 208px;
+  --head-h: 56px;
+  --gutter: 32px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --t-fast: 1ms; --t-mid: 1ms; --t-slow: 1ms; }
+}
+:root[data-motion="reduce"] { --t-fast: 1ms; --t-mid: 1ms; --t-slow: 1ms; }

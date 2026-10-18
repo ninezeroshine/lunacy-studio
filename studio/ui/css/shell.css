@@ -1,0 +1,144 @@
+/* Каркас: шапка, навигация, рабочая область, полоса черновика. */
+.app {
+  display: grid; min-height: 100vh;
+  grid-template-columns: var(--nav-w) minmax(0, 1fr);
+  grid-template-rows: var(--head-h) minmax(0, 1fr);
+  grid-template-areas: "brand head" "nav main";
+}
+
+/* первый запуск: содержимое раздела не показывается, пока его не начнёт собирать скелетон (main.js firstReveal) */
+html[data-boot] #view { opacity: 0; }
+
+
+/* рельс слева темнее рабочей области: граница — ступенью тона, без линий */
+.brand {
+  grid-area: brand; display: flex; align-items: center; gap: 10px; padding: 0 22px;
+  position: sticky; top: 0; z-index: 21; background: var(--ink-0);
+  color: var(--silver-bright); font: 500 18px/1 var(--font-display); letter-spacing: -.005em;
+}
+.brand svg { width: 24px; height: 24px; color: var(--gold); }
+
+.head {
+  grid-area: head; display: flex; align-items: center; gap: 18px; padding: 0 20px 0 var(--gutter);
+  background: var(--ink-1);
+  position: sticky; top: 0; z-index: 20;
+}
+.head .profile { display: flex; align-items: center; gap: 8px; color: var(--silver-dim); font-size: 13.5px; }
+.head .profile b { color: var(--silver); font-weight: 500; }
+.head .grow { flex: 1; }
+.conn { display: flex; align-items: center; gap: 8px; height: 30px; padding: 0 12px; border-radius: 15px; background: var(--ink-2); font-size: 13px; color: var(--silver); }
+.conn .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--silver-faint); box-shadow: 0 0 0 3px rgba(133, 144, 173, .12); }
+.conn[data-state="ok"] .dot { background: var(--ok); box-shadow: 0 0 0 3px rgba(143, 211, 181, .14); }
+.conn[data-state="off"] .dot { background: var(--danger); box-shadow: 0 0 0 3px rgba(226, 135, 122, .14); }
+.conn[data-state="busy"] .dot { background: var(--warn); animation: blink 1.2s ease-in-out infinite; }
+@keyframes blink { 50% { opacity: .35; } }
+.live-line { display: flex; align-items: center; gap: 8px; max-width: 360px; color: var(--silver-dim); font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.live-line .star { width: 10px; height: 10px; color: var(--gold); flex: none; }
+.timer-chip { display: none; align-items: center; gap: 6px; font: 500 12.5px/1 var(--font-note); color: var(--gold); letter-spacing: .04em; }
+.timer-chip.on { display: inline-flex; }
+
+.nav {
+  grid-area: nav; position: sticky; top: var(--head-h); height: calc(100vh - var(--head-h));
+  display: flex; flex-direction: column; gap: 4px; padding: 18px 12px; background: var(--ink-0);
+}
+.nav a {
+  position: relative; display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 14px;
+  border-radius: 10px; color: var(--silver-dim); text-decoration: none; font: 500 14.5px/1 var(--font-ui);
+  transition: color var(--t-fast) var(--ease), background var(--t-fast) var(--ease);
+}
+.nav a svg { width: 20px; height: 20px; flex: none; opacity: .85; }
+.nav a:hover { color: var(--silver-bright); background: var(--ink-2); }
+.nav a:active { transform: scale(.985); }
+.nav a[aria-current="page"] { color: var(--silver-bright); background: var(--ink-3); }
+.nav a[aria-current="page"]::before { content: ""; position: absolute; left: -12px; top: 11px; bottom: 11px; width: 3px; background: var(--gold); border-radius: 0 2px 2px 0; }
+.nav a[aria-current="page"] svg { color: var(--gold); opacity: 1; }
+.nav a .badge { margin-left: auto; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 4px; background: var(--gold-wash); color: var(--gold); font: 600 11px/18px var(--font-note); text-align: center; }
+.nav .foot { margin-top: auto; padding: 12px; display: grid; gap: 4px; }
+
+.main { grid-area: main; min-width: 0; padding: 30px var(--gutter) 120px; }
+.page { max-width: 1440px; margin: 0 auto; }
+.page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; margin-bottom: 26px; }
+.page-head .lead { margin-top: 10px; color: var(--silver); font-size: 15px; line-height: 23px; max-width: 62ch; }
+
+.grid-main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 380px); gap: 20px; align-items: start; }
+@media (max-width: 1180px) { .grid-main { grid-template-columns: 1fr; } }
+
+/* полоса черновика */
+.draft-bar {
+  position: fixed; left: calc(var(--nav-w) + var(--gutter)); right: var(--gutter); bottom: 18px; z-index: 30;
+  display: flex; align-items: center; gap: 14px; max-width: 1440px; margin: 0 auto; padding: 10px 12px 10px 18px;
+  border-radius: var(--r-panel); background: var(--ink-3); border: 1px solid var(--gold-dim);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, .5);
+  transform: translateY(140%); opacity: 0; transition: transform var(--t-slow) var(--ease), opacity var(--t-slow) var(--ease);
+}
+.draft-bar.on { transform: none; opacity: 1; }
+.draft-bar .what { flex: 1; color: var(--silver); }
+.draft-bar .what b { color: var(--gold); font-weight: 600; }
+.draft-bar .msg { min-height: 0; }
+
+/* баннер отключённой клавиатуры */
+.offline {
+  display: none; align-items: center; gap: 12px; margin: 0 0 18px; padding: 10px 14px; border-radius: var(--r-panel);
+  border: 1px solid rgba(226, 135, 122, .35); background: var(--danger-wash); color: var(--silver);
+}
+.offline.on { display: grid; gap: 8px; }
+.offline .bline { display: flex; align-items: center; gap: 12px; }
+.offline .bline > span { flex: 1; }
+.offline .bline svg { flex: none; }
+
+/* View Transitions: карта клавиатуры остаётся на месте при смене раздела */
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: var(--t-mid); animation-timing-function: var(--ease); }
+::view-transition-old(kb-chart), ::view-transition-new(kb-chart) { animation-duration: var(--t-slow); }
+
+@media (max-width: 860px) {
+  .app { grid-template-columns: 1fr; grid-template-rows: var(--head-h) auto minmax(0, 1fr); grid-template-areas: "head" "nav" "main"; }
+  .brand { display: none; }
+  .nav { position: static; height: auto; flex-direction: row; overflow-x: auto; padding: 8px; }
+  .nav .foot { display: none; }
+  .main { padding: 18px 16px 120px; }
+  .draft-bar { left: 16px; right: 16px; }
+}
+
+/* #main получает фокус после смены раздела (для скринридера) — это ориентир, а не элемент управления: без обводки */
+#main:focus { outline: none; }
+
+/* тосты не закрывают «Записать в клавиатуру», пока видна полоса черновика */
+body:has(.draft-bar.on) .toasts { bottom: 92px; }
+
+/* небо Пандоры (core/starfield.js) под интерфейсом; рельс навигации полупрозрачный — небо проступает и в нём.
+   Сияния — градиенты на своих слоях: двигаются только transform и opacity, это делает композитор без перерисовки. */
+.sky {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden;
+  background: linear-gradient(180deg, #010208 0%, #02040c 40%, #030712 72%, #040a17 100%);
+}
+.sky .starfield { position: absolute; inset: 0; width: 100%; height: 100%; }
+.sky-planet {
+  position: absolute; right: -16vmin; top: -20vmin; width: min(78vmin, 860px); height: auto; aspect-ratio: 1;
+  opacity: .3; animation: sky-planet 180s ease-in-out infinite alternate;
+}
+.sky-glow { position: absolute; border-radius: 50%; will-change: transform, opacity; }
+.sky-glow.g1 { left: -20vmax; bottom: -34vmax; width: 80vmax; height: 60vmax;
+  background: radial-gradient(closest-side, rgba(30, 90, 170, .13), rgba(30, 90, 170, .04) 55%, transparent);
+  animation: sky-g1 46s ease-in-out infinite alternate; }
+.sky-glow.g2 { right: -18vmax; bottom: -30vmax; width: 70vmax; height: 55vmax;
+  background: radial-gradient(closest-side, rgba(70, 60, 170, .12), rgba(70, 60, 170, .035) 55%, transparent);
+  animation: sky-g2 61s ease-in-out infinite alternate; }
+.sky-glow.g3 { left: 20vw; top: 18vh; width: 60vmax; height: 26vmax;
+  background: radial-gradient(closest-side, rgba(60, 120, 220, .05), transparent);
+  animation: sky-g3 73s ease-in-out infinite alternate; }
+/* станция anatomy внизу слева: своя композитная плоскость, чтобы бегущие импульсы не перерисовывали интерфейс */
+.sky-station { position: absolute; left: max(-60px, -3vw); bottom: -5vh; width: min(66vw, 1080px); opacity: .8; will-change: transform; }
+.sky-station svg { display: block; width: 100%; height: auto; }
+.sky-station .iso-line[data-flow] { animation-duration: 2600ms; stroke-width: 1px; }
+.sky-wave { animation: sky-wave 6.6s cubic-bezier(.2, .6, .3, 1) infinite; opacity: 0; }
+@keyframes sky-wave { 0% { transform: translateY(0) scale(.6); opacity: 0; } 12% { opacity: .9; } 100% { transform: translateY(-120px) scale(3.2); opacity: 0; } }
+@keyframes sky-g1 { from { transform: translate(0, 0) scale(1); opacity: .75; } to { transform: translate(6vw, -3vh) scale(1.12); opacity: 1; } }
+@keyframes sky-g2 { from { transform: translate(0, 0) scale(1.05); opacity: 1; } to { transform: translate(-7vw, -4vh) scale(.95); opacity: .7; } }
+@keyframes sky-g3 { from { transform: translate(-4vw, 0) rotate(-6deg); opacity: .6; } to { transform: translate(5vw, 3vh) rotate(4deg); opacity: 1; } }
+@keyframes sky-planet { from { transform: translate(0, 0) rotate(0deg); } to { transform: translate(-2vmin, 2vmin) rotate(-3deg); } }
+.sky.still .sky-wave, .sky.still .iso-line[data-flow], .sky.still .iso-dots circle[data-pulse] { animation: none; }
+.sky.still .sky-glow, .sky.still .sky-planet { animation: none; }
+.app { position: relative; z-index: 1; }
+.update-chip { background: var(--gold-wash); color: var(--gold-bright); box-shadow: inset 0 0 0 1px var(--gold-dim); }
+.update-chip svg { width: 15px; height: 15px; margin-right: 6px; }
+.nav, .brand { background: rgba(4, 7, 13, .72); }

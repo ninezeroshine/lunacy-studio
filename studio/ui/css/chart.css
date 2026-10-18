@@ -1,0 +1,129 @@
+/* Карта клавиатуры: лист звёздного атласа. */
+.chart { position: relative; width: 100%; }
+.chart svg { width: 100%; height: auto; overflow: visible; user-select: none; -webkit-user-select: none; }
+
+/* атлас */
+.chart .grid { stroke: var(--silver); stroke-opacity: .045; stroke-width: .5; vector-effect: non-scaling-stroke; }
+.chart .circle { fill: none; stroke: var(--silver); stroke-opacity: .09; stroke-width: .6; vector-effect: non-scaling-stroke; }
+.chart .circle.faint { stroke-opacity: .05; stroke-dasharray: 1 5; }
+.chart .star { fill: var(--silver); opacity: .35; }
+.chart .star.bright { fill: var(--silver-bright); opacity: .7; }
+.chart .frame { fill: none; stroke: var(--silver); stroke-opacity: .2; stroke-width: .7; vector-effect: non-scaling-stroke; }
+.chart .frame.inner { stroke-opacity: .09; }
+.chart .tick { stroke: var(--silver); stroke-opacity: .35; stroke-width: .7; vector-effect: non-scaling-stroke; fill: none; }
+.chart .scale-label { font: 500 8px var(--font-note); fill: var(--silver-faint); text-anchor: middle; letter-spacing: .04em; }
+.chart .scale-label.end { text-anchor: end; }
+.chart .plate-label { font: 500 9.5px var(--font-ui); fill: var(--silver-dim); letter-spacing: .01em; }   /* обычным регистром: мелкие заглавные с разрядкой не читаются */
+.chart .plate-label.end { text-anchor: end; }
+
+/* клавиша: «юбка» снизу и утапливаемый верх */
+.chart .key { cursor: pointer; outline: none; }
+.chart .skirt { fill: #070c19; stroke: var(--silver); stroke-opacity: .14; stroke-width: .6; vector-effect: non-scaling-stroke; }
+.chart .top {
+  fill: var(--ink-2); stroke: var(--silver); stroke-opacity: .34; stroke-width: .75; vector-effect: non-scaling-stroke;
+  transition: fill var(--t-mid) var(--ease), stroke-opacity var(--t-fast) var(--ease), stroke var(--t-fast) var(--ease);
+}
+.chart .lg { font: 500 11.5px var(--font-ui); fill: var(--silver); text-anchor: middle; dominant-baseline: middle; pointer-events: none; }
+.chart .lg.long { font-size: 8.4px; }
+.chart .sub { font: 600 6.8px var(--font-ui); fill: var(--gold); text-anchor: middle; pointer-events: none; letter-spacing: .01em; }
+.chart .kstar { fill: var(--silver); opacity: .28; pointer-events: none; transition: opacity var(--t-fast); }
+
+.chart .key:hover .top { stroke-opacity: .7; }
+.chart .key:focus-visible .top { stroke: var(--gold); stroke-opacity: 1; }
+.chart .key[data-down] .top { stroke: var(--gold-bright); stroke-opacity: .9; }
+.chart .key[data-selected] .top { fill: #1a2240; stroke: var(--gold); stroke-opacity: 1; }
+.chart .key[data-selected] .lg { fill: var(--silver-bright); }
+.chart .key[data-mapped] .kstar { fill: var(--gold); opacity: 1; r: 1.2; }
+.chart .key[data-mapped] .lg { transform: translateY(-3.6px); transform-box: fill-box; }
+.chart .key[data-disabled] .lg { fill: var(--silver-faint); text-decoration: line-through; }
+.chart .key[data-disabled] .top { stroke-dasharray: 2 2; }
+.chart .key[data-held] .top { fill: var(--gold-wash); stroke: var(--gold); stroke-opacity: .9; }
+.chart .key[data-muted] { opacity: .35; }
+.chart .key[data-filled] .top { stroke-opacity: .5; }
+.chart .key[data-lightfill] .lg { fill: #0b1222; }
+.chart .key[data-lightfill] .sub { fill: #3a2c10; }
+
+/* выбор, дуги, созвездия */
+.chart .ring { fill: none; stroke: var(--gold); stroke-width: 1; stroke-opacity: .55; vector-effect: non-scaling-stroke; pointer-events: none;
+  transition: x var(--t-mid) var(--ease), y var(--t-mid) var(--ease), width var(--t-mid) var(--ease), height var(--t-mid) var(--ease); }
+.chart .arc { fill: none; stroke: var(--gold); stroke-width: .9; stroke-opacity: .85; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.chart .arc-dot { fill: var(--gold); }
+.chart .con { stroke-width: .8; stroke-opacity: .6; stroke-dasharray: .5 2.5; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+
+.chart.compact .scale, .chart.compact .plate-label { display: none; }
+.chart.mode-paint .key { cursor: crosshair; }
+
+/* скелетон transitions.dev: тема обсерватории. :root:root:root перебивает тёмный блок модуля (:root:not(...)) */
+:root:root:root {
+  --gen-line: rgba(196, 207, 232, .55);
+  --gen-strong: #d8bd84;
+  --gen-ink: rgba(196, 207, 232, .22);
+  --gen-surface: #0a1020;
+  --gen-text: #e6ebf7;
+  --gen-muted: #8590ad;
+  --gen-font: "Bahnschrift SemiCondensed", "Bahnschrift", sans-serif;
+}
+
+/* ===== Клавиатура «как в жизни» (chart/real.js): цвета настоящей Lunacy In Space 98 ===== */
+.chart.real svg { overflow: visible; }
+.chart.real .shadow { fill: #000; opacity: .55; }
+.chart.real .edge { fill: none; stroke: rgba(0, 0, 0, .55); stroke-width: .6; vector-effect: non-scaling-stroke; }
+.chart.real .bevel { fill: none; stroke: rgba(255, 255, 255, .13); stroke-width: .8; vector-effect: non-scaling-stroke; }
+.chart.real .seam { fill: none; stroke: rgba(235, 235, 230, .2); stroke-width: .7; vector-effect: non-scaling-stroke; }
+.chart.real .rocket { fill: none; stroke: rgba(240, 240, 235, .72); stroke-width: .9; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.chart.real .led { fill: #66686d; }   /* на фото прорези у Esc светло-серые */
+.chart.real .glass { fill: #050506; }
+.chart.real .screen-mark { font: 400 8.4px var(--font-note); letter-spacing: .32em; fill: #bfa377; text-anchor: middle; dominant-baseline: middle; }
+.chart.real .key { cursor: pointer; outline: none; }
+.chart.real .outline { fill: none; stroke-width: .55; vector-effect: non-scaling-stroke; pointer-events: none; }
+.chart.real .ctop { transition: filter var(--t-fast) var(--ease); }
+.chart.real .face { pointer-events: none; }
+/* подписи — shine-through: цвет задаёт --lgd (серый на белых, белый на тёмных, цвет подсветки — когда горит) */
+.chart.real .key { --lgd: rgb(141 141 137); }
+.chart.real .key.dark { --lgd: rgb(230 230 226); }
+.chart.real .kl { font-family: var(--font-ui); font-weight: 600; text-anchor: middle; dominant-baseline: middle; fill: var(--lgd); }
+.chart.real .kl .alt { font-weight: 500; opacity: .92; }
+.chart.real .lw { font: 600 4.6px var(--font-ui); fill: var(--lgd); text-anchor: middle; dominant-baseline: middle; letter-spacing: .06em; }
+.chart.real .ico-line { fill: none; stroke: var(--lgd); stroke-width: .8; stroke-linecap: round; stroke-linejoin: round; }
+.chart.real .ico-line.thin { stroke-width: .6; }
+.chart.real .ico-fill { fill: var(--lgd); }
+.chart.real .badge { fill: #efeee9; }
+.chart.real .badge-t { font: 700 4.8px var(--font-ui); fill: #2a2b2e; text-anchor: middle; dominant-baseline: middle; letter-spacing: .12em; }
+.chart.real .sub { font: 700 6.2px var(--font-ui); fill: #9a6a12; text-anchor: middle; dominant-baseline: middle; letter-spacing: .02em; }
+.chart.real .key.dark .sub { fill: #e8c77e; }
+
+.chart.real .key:hover .ctop { filter: brightness(1.04); }
+.chart.real .key.dark:hover .ctop { filter: brightness(1.22); }
+.chart.real .key:focus-visible .outline { stroke: #fff !important; stroke-width: 1.2; stroke-dasharray: 3 2; }
+.chart.real .key[data-down] .ctop { filter: brightness(.96); }
+.chart.real .key[data-selected] .outline { stroke: var(--gold) !important; stroke-width: 1.5; }
+.chart.real .ring { fill: rgba(216, 189, 132, .16); stroke: var(--gold); stroke-width: 1.2; vector-effect: non-scaling-stroke; pointer-events: none; }
+.chart.real .key[data-mapped] .legend { opacity: .55; transform: translateY(-2.6px); }
+.chart.real .key[data-disabled] .cap { opacity: .5; }
+.chart.real .key[data-disabled] .legend { opacity: .35; }
+.chart.real .key[data-held] .outline { stroke: var(--gold) !important; stroke-width: 1.2; }
+.chart.real .key[data-held] .ctop { filter: sepia(.6) brightness(1.05); }
+.chart.real .key[data-muted] { opacity: .35; }
+.chart.real .glow rect { mix-blend-mode: screen; }
+.chart.real .arc { fill: none; stroke: var(--gold); stroke-width: 1.3; stroke-linecap: round; vector-effect: non-scaling-stroke; filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, .6)); }
+.chart.real .arc-dot { fill: var(--gold); }
+.chart.real .con { stroke-width: 1; stroke-opacity: .85; stroke-dasharray: 1 3; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.chart.real .rocket.trail { stroke-opacity: .8; }
+.chart.real .knurl { fill: none; stroke: rgba(0, 0, 0, .55); stroke-width: .8; vector-effect: non-scaling-stroke; }
+.chart.real .halo .halo-k { --lgd: #fff; }
+.chart.real .halo .kl, .chart.real .halo .lw { fill: var(--lgd); }
+.chart.real .halo .ico-line { stroke: var(--lgd); stroke-width: 1.6; }
+.chart.real .halo .ico-fill { fill: var(--lgd); }
+.chart.real .halo .badge, .chart.real .halo .badge-t { display: none; }
+
+/* слои поверх клавиш — только картинка: клики проходят к клавишам */
+.chart.real .halo, .chart.real .arcs, .chart.real .over, .chart.real .decal, .chart.real .glow, .chart.real .base-over, .chart.real .body { pointer-events: none; }
+/* правила плоской карты, которые не должны цеплять объёмную */
+.chart.real.mode-paint .key { cursor: crosshair; }
+.chart.real .ring { stroke-opacity: 1; transition: none; }
+.chart.real .halo .halo-k[data-mapped] { transform: translateY(-2.6px); }
+/* отключённая: бледная и перечёркнутая, как в SPEC */
+.chart.real .key[data-disabled] .kl { text-decoration: line-through; }
+/* неинтерактивная карта (превью эффекта, «Живая»): без руки-курсора и подсветки наведения */
+.chart.real.static .key { cursor: default; }
+.chart.real.static .key:hover .ctop { filter: none; }

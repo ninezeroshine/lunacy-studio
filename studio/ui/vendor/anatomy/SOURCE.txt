@@ -1,0 +1,1 @@
+anatomy kit/iso-kit.mjs (здесь iso-kit.js: сервис отдаёт .js как JavaScript) from github.com/wheresryan22/anatomy @ e6600ffc4e8e6620eeb45bf49bcdbd5e4b84163f (MIT). Копия без изменений; используется для объёмной клавиатуры (js/chart/real.js), пульта «Обзора» (js/pages/overview-rig.js, вместе с ISO_CSS через js/core/iso-theme.js) и станции на фоне (js/core/sky-station.js).

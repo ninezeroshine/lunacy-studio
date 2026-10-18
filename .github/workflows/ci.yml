@@ -1,0 +1,27 @@
+# Проверки на каждый пуш и pull request: тесты на заглушке клавиатуры (без железа) и пробная сборка.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: windows-latest
+    env:
+      PYTHONUTF8: "1"
+      LUNACY_NO_UPDATE: "1"
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+      - name: Тесты
+        shell: pwsh
+        run: ./packaging/run-tests.ps1
+      - name: Пробная сборка (без установщика)
+        run: python packaging/build.py --no-installer

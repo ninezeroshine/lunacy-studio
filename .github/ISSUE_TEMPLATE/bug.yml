@@ -1,0 +1,44 @@
+name: Что-то не работает
+description: Сообщить об ошибке в Lunacy Studio
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Спасибо, что пишете! Чем точнее описание, тем быстрее исправим.
+  - type: input
+    id: version
+    attributes:
+      label: Версия Lunacy Studio
+      description: «Настройки» → «Программа» → «Обновления»
+      placeholder: "1.0.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: connection
+    attributes:
+      label: Как подключена клавиатура
+      options:
+        - Кабель USB
+        - Ресивер 2.4G
+        - Bluetooth
+    validations:
+      required: true
+  - type: input
+    id: windows
+    attributes:
+      label: Windows
+      placeholder: "Windows 11 23H2"
+  - type: textarea
+    id: what
+    attributes:
+      label: Что делали и что случилось
+      description: По шагам. Что ожидали увидеть и что увидели вместо этого. Скриншот очень помогает.
+    validations:
+      required: true
+  - type: textarea
+    id: log
+    attributes:
+      label: Журнал
+      description: Последние строки файла %APPDATA%\LunacyStudio\studio.log (вставьте Win+R → %APPDATA%\LunacyStudio)
+      render: text

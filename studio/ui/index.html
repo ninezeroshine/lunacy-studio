@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ru" data-boot>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lunacy Studio</title>
+<meta name="color-scheme" content="dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M13.6 3.2a7 7 0 1 0 3.2 11.4 6 6 0 0 1-3.2-11.4Z' fill='%23d8bd84'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/shell.css">
+<link rel="stylesheet" href="css/chart.css">
+<link rel="stylesheet" href="css/pages.css">
+<link rel="stylesheet" href="css/pages-2.css">
+<link rel="stylesheet" href="vendor/transitions/ui-generation.css">
+<script>window.STUDIO_TOKEN = "__TOKEN__";
+// страница скрыта до сборки скелетоном (data-boot); если что-то пойдёт не так, через 4 с показываем как есть
+setTimeout(() => document.documentElement.removeAttribute("data-boot"), 4000);</script>
+</head>
+<body>
+<div class="app" id="app">
+  <div class="brand" id="brand"></div>
+  <header class="head" id="head">
+    <div class="profile" id="profile"></div>
+    <div class="grow"></div>
+    <div class="timer-chip" id="timerChip" data-tip="Фокус-таймер: осталось"></div>
+    <div class="live-line" id="liveLine"></div>
+    <div class="conn" id="conn" data-state="busy"><span class="dot"></span><span class="txt">Подключаюсь…</span></div>
+    <button class="btn quiet small" id="paletteBtn" data-tip="Палитра команд">Команды <span class="kbd">Ctrl K</span></button>
+  </header>
+  <nav class="nav" id="nav" aria-label="Разделы"></nav>
+  <main class="main" id="main" tabindex="-1">
+    <div class="offline" id="offline" role="status"></div>
+    <div id="view"></div>
+  </main>
+</div>
+<div class="draft-bar" id="draftBar" role="region" aria-label="Незаписанные изменения"></div>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

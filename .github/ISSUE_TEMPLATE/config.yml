@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Идея или вопрос
+    url: https://github.com/ninezeroshine/lunacy-studio/discussions
+    about: Предложить возможность или спросить, как что-то сделать

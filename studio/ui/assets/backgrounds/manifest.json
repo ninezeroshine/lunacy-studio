@@ -1,0 +1,27 @@
+[
+ {
+  "id": "crescent",
+  "label": "Полумесяц",
+  "file": "crescent.png"
+ },
+ {
+  "id": "phases",
+  "label": "Фазы луны",
+  "file": "phases.png"
+ },
+ {
+  "id": "constellation",
+  "label": "Созвездия",
+  "file": "constellation.png"
+ },
+ {
+  "id": "orbits",
+  "label": "Орбиты",
+  "file": "orbits.png"
+ },
+ {
+  "id": "horizon",
+  "label": "Лунный горизонт",
+  "file": "horizon.png"
+ }
+]

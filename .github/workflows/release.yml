@@ -1,0 +1,62 @@
+# Выпуск: тег vX.Y.Z → тесты → установщик и портативный ZIP → выпуск на GitHub с текстом из CHANGELOG.md.
+# Установленные копии Lunacy Studio увидят выпуск и предложат обновиться (studio/updater.py).
+# Тег с дефисом (v1.2.0-beta.1) публикуется как pre-release: автообновление его не предлагает.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    env:
+      PYTHONUTF8: "1"
+      LUNACY_NO_UPDATE: "1"
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+
+      - name: Версия в коде совпадает с тегом
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}".TrimStart("v").Split("-")[0]
+          $code = (Select-String -Path studio/version.py -Pattern '^VERSION = "(.+)"').Matches[0].Groups[1].Value
+          if ($tag -ne $code) { Write-Error "тег $tag, а в studio/version.py $code"; exit 1 }
+
+      - name: Тесты
+        shell: pwsh
+        run: ./packaging/run-tests.ps1
+
+      - name: Inno Setup
+        shell: pwsh
+        run: |
+          if (-not (Get-Command iscc -ErrorAction SilentlyContinue) -and -not (Test-Path "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe")) {
+            choco install innosetup --no-progress -y
+          }
+
+      - name: Сборка
+        run: python packaging/build.py
+
+      - name: Текст выпуска из CHANGELOG.md
+        shell: pwsh
+        run: |
+          $ver = "${{ github.ref_name }}".TrimStart("v")
+          python -c "import re,sys; t=open('CHANGELOG.md',encoding='utf-8').read(); m=re.search(r'^## \[' + re.escape(sys.argv[1]) + r'\][^\n]*\n(.*?)(?=^## \[|\Z)', t, re.S | re.M); open('notes.md','w',encoding='utf-8').write((m.group(1).strip() if m else 'Без описания') + '\n\n---\nСкачайте **LunacyStudio-Setup-' + sys.argv[1].split('-')[0] + '.exe**. Если программа уже установлена, она обновится сама.')" $ver
+
+      - name: Публикация
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $pre = if ($tag.Contains("-")) { "--prerelease" } else { "" }
+          gh release create $tag (Get-ChildItem dist -File).FullName --title "Lunacy Studio $($tag.TrimStart('v'))" --notes-file notes.md $pre

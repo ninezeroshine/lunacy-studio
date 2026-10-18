@@ -117,7 +117,8 @@ def main():
                 z.write(p, pathlib.Path("LunacyStudio") / p.relative_to(STAGE))
     outs.append(portable)
     sums = DIST / "SHA256SUMS.txt"
-    sums.write_text("".join(f"{sha256(p)}  {p.name}\n" for p in outs), encoding="utf-8")
+    with open(sums, "w", encoding="utf-8", newline="\n") as f:   # LF: sha256sum -c читает имена без «\r»
+        f.write("".join(f"{sha256(p)}  {p.name}\n" for p in outs))
     for p in outs + [sums]:
         print(f"  {p.relative_to(ROOT)}  {p.stat().st_size / 1e6:.1f} МБ")
 

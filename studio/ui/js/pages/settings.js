@@ -465,7 +465,7 @@ function renderApp() {
       <dl class="device about">
         <dt>Программа</dt><dd>Lunacy Studio ${esc(store.server.version || "")} — неофициальная программа, не связана с производителем клавиатуры. Локальный сервис, адрес 127.0.0.1:47800</dd>
         <dt>Исходники</dt><dd><a href="https://github.com/ninezeroshine/lunacy-studio" target="_blank" rel="noopener">github.com/ninezeroshine/lunacy-studio</a> · лицензия MIT</dd>
-        <dt>Данные</dt><dd>%APPDATA%\\LunacyStudio — профиль, сохранённые профили, миниатюры слотов</dd>
+        <dt>Данные</dt><dd>%APPDATA%\\LunacyStudio — настройка, профили, «Мои видео», миниатюры слотов, журнал studio.log. Обновление и удаление программы их не трогают</dd>
         <dt>Прошивка</dt><dd>${store.server.device?.firmware ? esc(store.server.device.firmware) : `<span class="muted">появится при подключении</span>`}</dd>
       </dl>
     </div>`;

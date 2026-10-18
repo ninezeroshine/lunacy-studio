@@ -58,6 +58,6 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           $tag = "${{ github.ref_name }}"
-          $args = @($tag) + (Get-ChildItem dist -File).FullName + @("--title", "Lunacy Studio $($tag.TrimStart('v'))", "--notes-file", "notes.md")
-          if ($tag.Contains("-")) { $args += "--prerelease" }   # пустую строку не передаём: gh принял бы её за имя файла
-          gh release create @args
+          $ghArgs = @($tag) + (Get-ChildItem dist -File).FullName + @("--title", "Lunacy Studio $($tag.TrimStart('v'))", "--notes-file", "notes.md")
+          if ($tag.Contains("-")) { $ghArgs += "--prerelease" }   # пустую строку не передаём: gh принял бы её за имя файла
+          gh release create @ghArgs

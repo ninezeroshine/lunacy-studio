@@ -129,7 +129,8 @@ def main():
     def toggle_hints():
         s = store.get("smart"); s["hints"] = not s["hints"]; store.set(s, "smart")
 
-    t = tray.Tray(icon, "Lunacy Studio", [
+    from studio.version import VERSION
+    t = tray.Tray(icon, f"Lunacy Studio {VERSION}", [
         ("Открыть Lunacy Studio", open_ui, None),
         ("Подсказчик горячих клавиш", toggle_hints, lambda: store.get("smart")["hints"]),
         ("", None, None),

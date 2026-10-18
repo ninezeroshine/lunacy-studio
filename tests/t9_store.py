@@ -20,24 +20,24 @@ s = Store(p); s.data["macros"] = [{"name": "A", "actions": []}]; s.save()
 s.data["macros"].append({"name": "B", "actions": []}); s.save()
 check("целый файл читается без ошибки", len(Store(p).data["macros"]) == 2 and Store(p).error is None)
 
-open(p, "w").write("{битый")
+open(p, "w", encoding="utf-8").write("{битый")
 s = Store(p)
 check("битый файл → резервная копия", [m["name"] for m in s.data["macros"]] == ["A"] and "резервной" in (s.error or ""), s.error)
 check("битый файл отложен", os.path.exists(p + ".broken"))
-open(p, "w").write("{снова битый")
+open(p, "w", encoding="utf-8").write("{снова битый")
 Store(p)
 check("второй сбой не затирает первый .broken", len([f for f in os.listdir(os.path.dirname(p)) if f.endswith(".broken")]) == 2)
 
-p = fresh(); json.dump([1, 2], open(p, "w"))
+p = fresh(); json.dump([1, 2], open(p, "w", encoding="utf-8"))
 s = Store(p)
 check("список вместо объекта без копии → чистый лист с объяснением", s.data["macros"] == [] and "нет" in (s.error or ""), s.error)
 
-p = fresh(); json.dump({"macros": [{"name": "X", "actions": []}], "smart": None, "lighting": "x"}, open(p, "w"))
+p = fresh(); json.dump({"macros": [{"name": "X", "actions": []}], "smart": None, "lighting": "x"}, open(p, "w", encoding="utf-8"))
 s = Store(p)
 check("испорченные поля → умолчания только для них", s.data["macros"][0]["name"] == "X" and s.data["smart"]["hints"] is True
       and "smart" in (s.error or "") and "lighting" in (s.error or ""), s.error)
 
-p = fresh(); json.dump({"keymap": {"base": {"55": {"type": "key", "hid": 41}}}, "macros": []}, open(p, "w"))
+p = fresh(); json.dump({"keymap": {"base": {"55": {"type": "key", "hid": 41}}}, "macros": []}, open(p, "w", encoding="utf-8"))
 s = Store(p)
 check("раскладка без слоя fn не выкидывает файл", s.data["keymap"]["base"].get("55", {}).get("hid") == 41 and s.data["keymap"]["fn"] == {})
 

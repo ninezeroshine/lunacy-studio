@@ -375,10 +375,46 @@ def connect_menu():
 
 
 def volume_menu():
-    """Громкость (F108 «Volume Page (English)» 0x2FE9CE). Значки ± прошивка S98 кладёт сверху в (20,62) и (170,57)
-    (наши 0x325c24 и 0x3245f0), шкалу 62…162 у F108 — вероятно, тоже она: здесь только пустая дорожка."""
+    """Громкость (F108 «Volume Page (English)» 0x2FE9CE, подтверждено фото). Значки «−» и «+» прошивка кладёт сама
+    при повороте колеса (кадры — см. VOL_FRAMES в main), поэтому на странице их нет: иначе рядом встают двойники."""
     t = menu_bg("Громкость")
-    t.rect([62, 66, 162, 80], outline=LINE_STRONG, fill=INK2, r=7)
+    # полоса 46…96 — сплошной INK1: туда прошивка кладёт кадры «−» (x≈41, y 62) и «+» (x≈162, y 57), ±строка и ±5 px
+    for y in range(26, 135):
+        k = 0 if 46 <= y <= 96 else min((46 - y if y < 46 else y - 96) / 40, 1) ** 1.3 * 0.85
+        c = tuple(round(a + (b - a) * k) for a, b in zip(rgb(INK1), rgb(INK0)))
+        t.d.rectangle(t.S([0, y, 240, y + 1]), fill=c)
+    t.text((119, 72), "тише · громче", 9.5, SILVER_DIM, path=INTER)
+    # эквалайзер внизу: неподвижный, но «звучащий»; пики — золотом
+    base, n = 124, 34
+    for i in range(n):
+        x = 18 + i * 6.1
+        v = (math.sin(i * 0.55) * 0.5 + math.sin(i * 1.31 + 1.2) * 0.3 + math.sin(i * 0.23 + 0.4) * 0.35 + 1.15) / 2.3
+        h = 3 + v * 19
+        top = base - h
+        col = GOLD if v > 0.8 else GOLD_DIM if v > 0.62 else LINE_STRONG
+        t.rect([x, top, x + 3, base], fill=col, r=1.2)
+    t.line([(14, base + 2.5), (226, base + 2.5)], LINE, 1)
+    for x, y, r, c in [(28, 36, .8, SILVER_FAINT), (205, 34, 1, GOLD), (150, 40, .6, SILVER_FAINT), (60, 41, .7, SILVER_DIM)]:
+        t.dot(x, y, r, c)
+    return t.done()
+
+
+def vol_frame(w, h, plus, waves):
+    """Кадр анимации громкости на сплошном INK1 с полями ≥ 6 px: ошибка адреса на строку-другую или несколько
+    пикселей только сдвинет значок, а не разорвёт его."""
+    t = Tile(w, h, INK1)
+    cy = h / 2
+    sx = 14 if plus else 11
+    c = SILVER_BRIGHT
+    t.d.polygon(t.S([sx - 5, cy - 3, sx - 2, cy - 3, sx + 2, cy - 6.5, sx + 2, cy + 6.5, sx - 2, cy + 3, sx - 5, cy + 3]),
+                outline=rgb(c), width=max(1, round(1.2 * SS)))
+    for k in range(waves):
+        r = 4 + k * 3.2
+        t.arc([sx + 2 - r, cy - r, sx + 2 + r, cy + r], -50, 50, GOLD if k == waves - 1 else SILVER_DIM, 1.2)
+    x = w - (11 if plus else 8)
+    t.line([(x - 3.5, cy), (x + 3.5, cy)], GOLD, 1.6)
+    if plus:
+        t.line([(x, cy - 3.5), (x, cy + 3.5)], GOLD, 1.6)
     return t.done()
 
 
@@ -552,11 +588,15 @@ def main():
     # подписи регулировки подсветки 99×28 в (0,0): T1/T2 — корейский набор AULA, T3/T4 — английский
     for a, s in [(0x23b790, "Яркость"), (0x23cd38, "Скорость"), (0x23e2e0, "Яркость"), (0x23f888, "Скорость")]:
         tiles[a] = caption(s, crop(0, 0, 99, 28))
-    # громкость: V 49×29 в (170,57) — «+», v 35×19 в (20,62) — «−», по два кадра
-    tiles[0x3245f0] = speaker(49, 29, True, 0, crop(170, 57, 49, 29))
-    tiles[0x32510a] = speaker(49, 29, True, 1, crop(170, 57, 49, 29))
-    tiles[0x325c24] = speaker(35, 19, False, 0, crop(20, 62, 35, 19))
-    tiles[0x326156] = speaker(35, 19, False, 1, crop(20, 62, 35, 19))
+    # громкость: кадры анимации колеса. Lunacy читает иначе, чем S98 (диагностика 2026-10-19, recon/spi/vol_diag.py,
+    # видео владельца): «+» — кадры 49×29 подряд, найдены 0x324B48 и 0x325662 (±строка), «−» — 35×19/20 с 0x326156
+    # (адрес S98) и следующий. Вся область — сплошной фон, кадры «+» с 0x32402E (на кадр раньше) и с полями.
+    VOL_FILL = (0x323000, 0x326C00)
+    tiles[VOL_FILL[0]] = Image.new("RGB", (1, (VOL_FILL[1] - VOL_FILL[0]) // 2), rgb(INK1))
+    for k, a in enumerate((0x32402E, 0x324B48, 0x325662)):
+        tiles[a] = vol_frame(49, 28, True, k + 1)    # 28 строк: кадр 0x325662 не заходит на «−» с 0x326156
+    tiles[0x326156] = vol_frame(35, 19, False, 2)
+    tiles[0x326688] = vol_frame(35, 20, False, 1)   # 35×20 с полями: годится и для шага 1330, и для 1400 (0x3266CE)
     # поиск: 3 кадра BT, 3 кадра 2.4G (F108: «BT Linking Animation», «WiFi Linking Animation»)
     for i, a in enumerate([0x17ee68, 0x189368, 0x193868]):
         tiles[a] = linking("bt", i)
